@@ -164,6 +164,11 @@ else
   BUILD_DISPLAY_ID := $(build_desc)
 endif
 
+# [Advantech] Show the version at Build Number field in Settings APP
+ifeq ($(ADVANTECH_VERSION_CONTROL),true)
+  BUILD_DISPLAY_ID := $(BUILD_ID)
+endif
+
 # Accepts a whitespace separated list of product locales such as
 # (en_US en_AU en_GB...) and returns the first locale in the list with
 # underscores replaced with hyphens. In the example above, this will
@@ -845,6 +850,8 @@ endif
 else
 ifdef TARGET_RECOVERY_FSTAB
 recovery_fstab := $(TARGET_RECOVERY_FSTAB)
+recovery_emmc_fstab := $(TARGET_RECOVERY_EMMC_FSTAB)
+recovery_sata_fstab := $(TARGET_RECOVERY_SATA_FSTAB)
 else
 recovery_fstab := $(strip $(wildcard $(TARGET_DEVICE_DIR)/recovery.fstab))
 endif
@@ -920,6 +927,10 @@ define build-recoveryimage-target
     cp -rf $(item) $(TARGET_RECOVERY_ROOT_OUT)/)
   $(hide) $(foreach item,$(recovery_fstab), \
     cp -f $(item) $(TARGET_RECOVERY_ROOT_OUT)/etc/recovery.fstab)
+  $(hide) $(foreach item,$(recovery_emmc_fstab), \
+	cp -f $(item) $(TARGET_RECOVERY_ROOT_OUT)/etc/recovery_emmc.fstab)
+  $(hide) $(foreach item,$(recovery_sata_fstab), \
+	cp -f $(item) $(TARGET_RECOVERY_ROOT_OUT)/etc/recovery_sata.fstab)
   $(hide) cp $(RECOVERY_INSTALL_OTA_KEYS) $(TARGET_RECOVERY_ROOT_OUT)/res/keys
   $(hide) cat $(INSTALLED_DEFAULT_PROP_TARGET) $(recovery_build_prop) \
           > $(TARGET_RECOVERY_ROOT_OUT)/default.prop
@@ -953,6 +964,8 @@ $(INSTALLED_RECOVERYIMAGE_TARGET): $(MKBOOTFS) $(MKBOOTIMG) $(MINIGZIP) \
 		$(INSTALLED_2NDBOOTLOADER_TARGET) \
 		$(recovery_build_prop) $(recovery_resource_deps) \
 		$(recovery_fstab) \
+		$(recovery_emmc_fstab) \
+		$(recovery_sata_fstab) \
 		$(RECOVERY_INSTALL_OTA_KEYS)
 		$(call build-recoveryimage-target, $@)
 
@@ -974,7 +987,7 @@ ifneq ($(strip $(TARGET_BOOTLOADER_CONFIG)),)
 BOOTLOADER_CROSS_TOOLCHAIN := `pwd`/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/bin/arm-linux-androideabi-
 BOOTLOADER_ENV := ARCH=arm CROSS_COMPILE=$(BOOTLOADER_CROSS_TOOLCHAIN)
 HOST_PROCESSOR := $(shell cat /proc/cpuinfo | grep processor | wc -l)
-TARGET_BOOTLOADER_IMAGE := $(PRODUCT_OUT)/u-boot.imx
+TARGET_BOOTLOADER_IMAGE := $(PRODUCT_OUT)/u-boot_crc.bin
 
 BOOTLOADER_PATH := bootable/bootloader/uboot-imx/
 BOOTLOADER_CONFIG_FILE := $(BOOTLOADER_PATH)/include/config.h
@@ -990,8 +1003,8 @@ $(TARGET_BOOTLOADER_IMAGE):
 		$(MAKE) -C bootable/bootloader/uboot-imx/ distclean $(BOOTLOADER_ENV); \
 		$(MAKE) -C bootable/bootloader/uboot-imx/ $$UBOOT_CONFIG $(BOOTLOADER_ENV); \
 		$(MAKE) -C bootable/bootloader/uboot-imx/ $(BOOTLOADER_ENV); \
-		install -D bootable/bootloader/uboot-imx/u-boot.imx $(PRODUCT_OUT)/u-boot-$$UBOOT_PLATFORM.imx; \
-		install -D bootable/bootloader/uboot-imx/u-boot.imx $@; \
+		install -D bootable/bootloader/uboot-imx/u-boot_crc.bin.crc $(PRODUCT_OUT)/u-boot_crc.bin.crc; \
+		install -D bootable/bootloader/uboot-imx/u-boot_crc.bin $@; \
 	done
 else
 bootloader:
@@ -1014,8 +1027,10 @@ KERNEL_OUT := $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ
 .PHONY: $(TARGET_PREBUILT_KERNEL)
 kernelimage: $(TARGET_PREBUILT_KERNEL)
 
+.PHONY: $(KERNEL_CONFIGURE)
 $(KERNEL_CONFIGURE): kernel_imx/arch/arm/configs/$(TARGET_KERNEL_DEFCONF)
 
+.PHONY: $(TARGET_KERNEL_CONFIGURE)
 $(TARGET_KERNEL_CONFIGURE): kernel_imx/arch/arm/configs/$(TARGET_KERNEL_DEFCONF) $(KERNEL_CONFIGURE)
 	$(MAKE) -C kernel_imx $(TARGET_KERNEL_DEFCONF) $(KERNEL_ENV)
 	install -D $(KERNEL_CONFIGURE) $(TARGET_KERNEL_CONFIGURE)
@@ -1714,7 +1729,8 @@ name := $(TARGET_PRODUCT)
 ifeq ($(TARGET_BUILD_TYPE),debug)
   name := $(name)_debug
 endif
-name := $(name)-ota-$(FILE_NAME_TAG)
+#name := $(name)-ota-$(FILE_NAME_TAG)
+name := update
 
 block_file := 
 ifneq ($(TARGET_USERIMAGES_USE_UBIFS),true)

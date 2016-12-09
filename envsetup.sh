@@ -342,8 +342,21 @@ function choosetype()
 # that kinda works with a generic product, but really, you should
 # pick a product by name.
 #
+PRODUCT_CHOICES=(rsb4410_a1 rsb4410_a2 rsb4411_a1)
+
 function chooseproduct()
 {
+    # Advantech, List the product for choosecombo
+    echo "Product choices are:"
+    local index=1
+    local p
+    for p in ${PRODUCT_CHOICES[@]}
+    do
+        echo "     $index. $p"
+        index=$(($index+1))
+    done
+    # end
+
     if [ "x$TARGET_PRODUCT" != x ] ; then
         default_value=$TARGET_PRODUCT
     else
