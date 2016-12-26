@@ -342,7 +342,7 @@ function choosetype()
 # that kinda works with a generic product, but really, you should
 # pick a product by name.
 #
-PRODUCT_CHOICES=(rsb_4410_a2)
+PRODUCT_CHOICES=(rsb_4410_a2, rom_3420_a1)
 
 function chooseproduct()
 {
