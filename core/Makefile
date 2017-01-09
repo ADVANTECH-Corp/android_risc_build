@@ -823,7 +823,7 @@ endif
 ifneq (,$(wildcard $(recovery_resources_common)-$(recovery_density)))
 recovery_resources_common := $(recovery_resources_common)-$(recovery_density)
 else
-recovery_resources_common := $(recovery_resources_common)-xhdpi
+recovery_resources_common := $(recovery_resources_common)-mdpi
 endif
 
 # Select the 18x32 font on high-density devices (xhdpi and up); and
@@ -1005,6 +1005,8 @@ $(TARGET_BOOTLOADER_IMAGE):
 		$(MAKE) -C bootable/bootloader/uboot-imx/ $(BOOTLOADER_ENV); \
 		install -D bootable/bootloader/uboot-imx/u-boot_crc.bin.crc $(PRODUCT_OUT)/u-boot_crc.bin.crc; \
 		install -D bootable/bootloader/uboot-imx/u-boot_crc.bin $@; \
+		install -D bootable/bootloader/uboot-imx/u-boot.imx $(PRODUCT_OUT)/u-boot-$$UBOOT_PLATFORM.imx; \
+ 		install -D bootable/bootloader/uboot-imx/u-boot.imx $@; \
 	done
 else
 bootloader:
