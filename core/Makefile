@@ -1006,7 +1006,7 @@ $(TARGET_BOOTLOADER_IMAGE):
 		install -D bootable/bootloader/uboot-imx/u-boot_crc.bin.crc $(PRODUCT_OUT)/u-boot_crc.bin.crc; \
 		install -D bootable/bootloader/uboot-imx/u-boot_crc.bin $@; \
 		install -D bootable/bootloader/uboot-imx/u-boot.imx $(PRODUCT_OUT)/u-boot-$$UBOOT_PLATFORM.imx; \
- 		install -D bootable/bootloader/uboot-imx/u-boot.imx $@; \
+ 		install -D bootable/bootloader/uboot-imx/u-boot.imx  $(PRODUCT_OUT)/u-boot.imx; \
 	done
 else
 bootloader:
