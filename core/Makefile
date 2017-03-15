@@ -852,6 +852,7 @@ ifdef TARGET_RECOVERY_FSTAB
 recovery_fstab := $(TARGET_RECOVERY_FSTAB)
 recovery_emmc_fstab := $(TARGET_RECOVERY_EMMC_FSTAB)
 recovery_sata_fstab := $(TARGET_RECOVERY_SATA_FSTAB)
+recovery_sd2_fstab := $(TARGET_RECOVERY_SD2_FSTAB)
 else
 recovery_fstab := $(strip $(wildcard $(TARGET_DEVICE_DIR)/recovery.fstab))
 endif
@@ -931,6 +932,8 @@ define build-recoveryimage-target
 	cp -f $(item) $(TARGET_RECOVERY_ROOT_OUT)/etc/recovery_emmc.fstab)
   $(hide) $(foreach item,$(recovery_sata_fstab), \
 	cp -f $(item) $(TARGET_RECOVERY_ROOT_OUT)/etc/recovery_sata.fstab)
+  $(hide) $(foreach item,$(recovery_sd2_fstab), \
+        cp -f $(item) $(TARGET_RECOVERY_ROOT_OUT)/etc/recovery_sd2.fstab)
   $(hide) cp $(RECOVERY_INSTALL_OTA_KEYS) $(TARGET_RECOVERY_ROOT_OUT)/res/keys
   $(hide) cat $(INSTALLED_DEFAULT_PROP_TARGET) $(recovery_build_prop) \
           > $(TARGET_RECOVERY_ROOT_OUT)/default.prop
