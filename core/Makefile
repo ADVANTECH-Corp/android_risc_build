@@ -181,6 +181,10 @@ else
   BUILD_DISPLAY_ID := $(build_desc)
 endif
 
+# [Advantech] Show the version at Build Number field in Settings APP
+ifeq ($(ADVANTECH_VERSION_CONTROL),true)
+  BUILD_DISPLAY_ID := $(BUILD_ID)
+endif
 # Accepts a whitespace separated list of product locales such as
 # (en_US en_AU en_GB...) and returns the first locale in the list with
 # underscores replaced with hyphens. In the example above, this will
@@ -889,7 +893,8 @@ endif
 ifneq (,$(wildcard $(recovery_resources_common)-$(recovery_density)))
 recovery_resources_common := $(recovery_resources_common)-$(recovery_density)
 else
-recovery_resources_common := $(recovery_resources_common)-xhdpi
+# [Advantech] modify xhdpi to mdpi
+recovery_resources_common := $(recovery_resources_common)-mdpi
 endif
 
 # Select the 18x32 font on high-density devices (xhdpi and up); and
@@ -918,6 +923,10 @@ endif
 else
 ifdef TARGET_RECOVERY_FSTAB
 recovery_fstab := $(TARGET_RECOVERY_FSTAB)
+# [Advantech] add emmc sata and rom7421 micro_sd
+recovery_emmc_fstab := $(TARGET_RECOVERY_EMMC_FSTAB)
+recovery_sata_fstab := $(TARGET_RECOVERY_SATA_FSTAB)
+recovery_sd2_fstab := $(TARGET_RECOVERY_SD2_FSTAB)
 else
 recovery_fstab := $(strip $(wildcard $(TARGET_DEVICE_DIR)/recovery.fstab))
 endif
@@ -1013,6 +1022,13 @@ define build-recoveryimage-target
     cp -rf $(item) $(TARGET_RECOVERY_ROOT_OUT)/$(newline))
   $(hide) $(foreach item,$(recovery_fstab), \
     cp -f $(item) $(TARGET_RECOVERY_ROOT_OUT)/etc/recovery.fstab)
+# [Advantech] add emmc stat and micro sd
+  $(hide) $(foreach item,$(recovery_emmc_fstab), \
+	cp -f $(item) $(TARGET_RECOVERY_ROOT_OUT)/etc/recovery_emmc.fstab)
+  $(hide) $(foreach item,$(recovery_sata_fstab), \
+	cp -f $(item) $(TARGET_RECOVERY_ROOT_OUT)/etc/recovery_sata.fstab)
+  $(hide) $(foreach item,$(recovery_sd2_fstab), \
+        cp -f $(item) $(TARGET_RECOVERY_ROOT_OUT)/etc/recovery_sd2.fstab)
   $(if $(strip $(recovery_wipe)), \
     $(hide) cp -f $(recovery_wipe) $(TARGET_RECOVERY_ROOT_OUT)/etc/recovery.wipe)
   $(hide) cp $(RECOVERY_INSTALL_OTA_KEYS) $(TARGET_RECOVERY_ROOT_OUT)/res/keys
@@ -1071,6 +1087,7 @@ $(INSTALLED_BOOTIMAGE_TARGET): $(MKBOOTFS) $(MKBOOTIMG) $(MINIGZIP) \
 		$(call build-recoveryimage-target, $@)
 endif
 
+# [Advantech] add emmc stat and micro sd
 $(INSTALLED_RECOVERYIMAGE_TARGET): $(MKBOOTFS) $(MKBOOTIMG) $(MINIGZIP) \
 		$(INSTALLED_RAMDISK_TARGET) \
 		$(INSTALLED_BOOTIMAGE_TARGET) \
@@ -1079,6 +1096,9 @@ $(INSTALLED_RECOVERYIMAGE_TARGET): $(MKBOOTFS) $(MKBOOTIMG) $(MINIGZIP) \
 		$(INSTALLED_2NDBOOTLOADER_TARGET) \
 		$(recovery_build_prop) $(recovery_resource_deps) \
 		$(recovery_fstab) \
+		$(recovery_emmc_fstab) \
+		$(recovery_sata_fstab) \
+		$(recovery_sd2_fstab) \
 		$(RECOVERY_INSTALL_OTA_KEYS)
 		$(call build-recoveryimage-target, $@)
 
@@ -1107,7 +1127,8 @@ BOOTLOADER_CROSS_TOOLCHAIN := `pwd`/prebuilts/gcc/linux-x86/arm/arm-linux-androi
 endif
 BOOTLOADER_ENV := ARCH=arm CROSS_COMPILE=$(BOOTLOADER_CROSS_TOOLCHAIN)
 HOST_PROCESSOR := $(shell cat /proc/cpuinfo | grep processor | wc -l)
-TARGET_BOOTLOADER_IMAGE := $(PRODUCT_OUT)/u-boot.$(TARGET_BOOTLOADER_POSTFIX)
+# [Advantech] modify u-boot_crc.bin
+TARGET_BOOTLOADER_IMAGE := $(PRODUCT_OUT)/u-boot_crc.bin
 
 BOOTLOADER_PATH := bootable/bootloader/uboot-imx/
 BOOTLOADER_CONFIG_FILE := $(BOOTLOADER_PATH)/include/config.h
@@ -1121,6 +1142,8 @@ $(TARGET_BOOTLOADER_IMAGE):
 		$(MAKE) -C bootable/bootloader/uboot-imx/ distclean $(BOOTLOADER_ENV); \
 		$(MAKE) -C bootable/bootloader/uboot-imx/ $$UBOOT_CONFIG $(BOOTLOADER_ENV); \
 		$(MAKE) -C bootable/bootloader/uboot-imx/ $(BOOTLOADER_ENV); \
+		install -D bootable/bootloader/uboot-imx/u-boot_crc.bin.crc $(PRODUCT_OUT)/u-boot_crc.bin.crc; \
+		install -D bootable/bootloader/uboot-imx/u-boot_crc.bin $@; \
 		install -D bootable/bootloader/uboot-imx/u-boot.$(TARGET_BOOTLOADER_POSTFIX) $(PRODUCT_OUT)/u-boot-$$UBOOT_PLATFORM.imx; \
 		if [ $(UBOOT_POST_PROCESS) = true ]; then \
 		echo "build post process" ; \
@@ -1153,8 +1176,10 @@ KERNEL_OUT := $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ
 .PHONY: $(TARGET_PREBUILT_KERNEL)
 kernelimage: $(TARGET_PREBUILT_KERNEL)
 
+.PHONY: $(KERNEL_CONFIGURE)
 $(KERNEL_CONFIGURE): kernel_imx/arch/$(TARGET_ARCH)/configs/$(TARGET_KERNEL_DEFCONF)
 
+.PHONY: $(TARGET_KERNEL_CONFIGURE)
 $(TARGET_KERNEL_CONFIGURE): kernel_imx/arch/$(TARGET_ARCH)/configs/$(TARGET_KERNEL_DEFCONF) $(KERNEL_CONFIGURE)
 	$(MAKE) -C kernel_imx $(TARGET_KERNEL_DEFCONF) $(KERNEL_ENV)
 	install -D $(KERNEL_CONFIGURE) $(TARGET_KERNEL_CONFIGURE)
