@@ -121,8 +121,7 @@ PRODUCT_PACKAGES += \
     telecom \
     vdc \
     vold \
-    wm
-
+    wm 
 
 PRODUCT_COPY_FILES := $(call add-to-product-copy-files-if-exists,\
     frameworks/base/preloaded-classes:system/etc/preloaded-classes)
