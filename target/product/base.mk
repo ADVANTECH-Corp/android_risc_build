@@ -33,6 +33,7 @@ PRODUCT_PACKAGES += \
     bugreportz \
     cameraserver \
     content \
+    dhcpcd-6.8.2 \
     dnsmasq \
     dpm \
     framework \
